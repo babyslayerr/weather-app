@@ -1,190 +1,106 @@
 <template>
-  <div
-    id="app"
-    :class="
-      typeof weather.main != 'undefined' && weather.main.temp > 16 ? 'warm' : ''
-    "
-  >
-    <main>
-      <div class="search-box">
-        <input
-          type="text"
-          v-model="query"
-          class="search-bar"
-          placeholder="search..."
-          @keypress="fetchWeather"
-        />
-      </div>
-      <div class="weather-rap" v-if="typeof weather.main != 'undefined'">
-        <div class="location-box">
-          <div class="location">
-            {{ weather.name }}, {{ weather.sys.country }}
-          </div>
-          <div class="date">{{ dateBuilder() }}</div>
-        </div>
-
-        <div class="weather-box">
-          <div class="temp">{{ Math.round(weather.main.temp) }}'C</div>
-          <div class="weather">{{ weather.weather[0].main }}</div>
-        </div>
-      </div>
-    </main>
+  <div id="main"> <!-- 스타일 적용을 위한 root태그 생성 -->
+    <div class="search-box">
+      <input v-model="city" id="cityInput"/>
+    </div>
+    <div class="location-box">
+      <div>{{location}}</div>
+      <div>{{todayDate}}</div>
+    </div>
+    <div class="weather-box">
+      <div>{{temp}}</div>
+      <div>{{weather}}</div>
+    </div>
   </div>
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      api_key: "611d48034b6b1de018f2d156d78bd781",
-      url_base: "https://api.openweathermap.org/data/2.5/",
-      query: "",
-      weather: {},
-    };
-  },
-  methods: {
-    fetchWeather(e) {
-      if (e.key == "Enter") {
-        fetch(
-          `${this.url_base}weather?q=${this.query}&units=metric&APPID=${this.api_key}`
-        )
-          .then((res) => {
-            return res.json();
-          })
-          .then(this.setResults);
-      }
-    },
-    setResults(results) {
-      this.weather = results;
-    },
-    dateBuilder() {
-      let d = new Date();
-      let months = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
-      let days = [
-        "Sunday",
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-      ];
-      let day = days[d.getDay()];
-      let date = d.getDate();
-      let month = months[d.getMonth()];
-      let year = d.getFullYear();
+import {onMounted, onUnmounted, ref} from "vue";
+import axios from "axios";
 
-      return `${day} ${date} ${month} ${year}`;
-    },
-  },
-};
+export default {
+  // Vue3 Composition API에서 나온 재사용을 위한 기능
+  setup(){
+    // 재사용 가능한 변수 선언
+    // OpenWeather 에 사용될 apiKey
+    let apiKey = ref('611d48034b6b1de018f2d156d78bd781')
+    // OpenWeather 기본 url
+    let url = ref('https://api.openweathermap.org/data/2.5/weather')
+    // 받아올 도시 정보
+    let city = ref('');
+    // 날씨 정보 가져오기(OpenWeather API, axios 사용)
+    const fetchWeather = () => {
+      axios.get(url.value, {
+        // 설정값중 파라미터 관련 설정
+        params : {
+          q : city.value, // 입력값으로 받을 도시
+          appid : apiKey.value
+        }
+      }).then(response => {
+            console.log(response)
+      })
+    }
+
+    //컴포넌트가 마운트 될 때 eventListener등록
+    onMounted(()=>{
+      // input에 대한eventListener 등록
+      let cityInput = document.querySelector("#cityInput")
+      cityInput.addEventListener('keydown', (e) =>{
+        // Enter사용시
+        if(e.key === 'Enter'){
+          fetchWeather();
+        }
+      })
+    })
+    // unmounted될때 EventListener제거
+    onUnmounted(()=>{
+      let cityInput = document.querySelector("#cityInput")
+      cityInput.removeEventListener('keydown', (e) =>{
+        // Enter사용시
+        if(e.key === 'Enter'){
+          fetchWeather();
+        }
+      })
+    })
+    // city => city : ref('') 로 변환
+    return {apiKey, url, city, fetchWeather}
+  }
+}
+
+
 </script>
 
 <style>
+/* 모든 요소선택자에대해 마진 및 패딩 0처리 */
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
-body {
-  font-family: "montserrat", sans-serif;
-}
-#app {
-  background-image: url("./assets/cold-bg.jpg");
-  background-size: cover;
-  background-position: bottom;
-  transition: 0.4s;
-}
-#app.warm {
-  background-image: url(./assets/warm-bg.jpg);
-}
-main {
-  min-height: 100vh;
+#main{
+  margin: 0;
   padding: 25px;
+  height: 100vh;
+  background-image: url("@/assets/cold-bg.jpg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: auto 100vh;
+  /* display를 FlaxBox 컨테이너로 지정 */
+  display: flex;
+  /* flaxbox 속성중 가로로 어떻게 나열할지 결정하는 속성 */
+  justify-content: center;
+  /* flaxbox 속성중 세로로 어떻게 나열할지 결정하는 속성 */
+  align-items: flex-start;
+  /* 자식 컨테이너 테두리 요소 적용 -> padding이 height값에 포함됨 */
+  box-sizing: border-box;
 
-  background-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.25),
-    rgba(0, 0, 0, 0.75)
-  );
-}
-.search-box {
-  width: 100%;
-  margin-bottom: 30px;
-}
-.search-box .search-bar {
-  display: block;
-  width: 100%;
-  padding: 15px;
-  color: #313131;
+  .search-box{
 
-  font-size: 20px;
+  }
 
-  appearance: none;
-  border: none;
-  outline: none;
-  background: none;
+  /* input 스타일 적용*/
+  #cityInput{
+    width: 100%;
+  }
 
-  box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.25);
-  background-color: rgba(255, 255, 255, 0.5);
-  border-radius: 0px 16px 0px 16px;
-  transition: 0.4s;
-}
-.search-box .search-bar:focus {
-  box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.25);
-  background-color: rgba(255, 255, 255, 0.75);
-  border-radius: 16px 0px 16px 0px;
-}
-
-.location-box .location {
-  color: #fff;
-  font-size: 32px;
-  font-weight: 500;
-  text-align: center;
-  font-style: italic;
-  text-shadow: 1px 3px rgba(0, 0, 0, 0.25);
-}
-.location-box .date {
-  text-align: center;
-  color: #fff;
-  font-size: 24px;
-  font-weight: 200;
-  font-style: italic;
-}
-.weather-box {
-  text-align: center;
-}
-.weather-box .temp {
-  display: inline-block;
-  padding: 10px 25px;
-  color: #fff;
-  font-size: 102px;
-  font-weight: 900;
-
-  text-shadow: 3px 6px rgba(0, 0, 0, 0.25);
-  background-color: rgba(255, 255, 255, 0.25);
-  border-radius: 16px;
-  margin: 30px 0px;
-  box-shadow: 3px 6px rgba(0, 0, 0, 0.25);
-}
-.weather-box .weather {
-  color: #fff;
-  font-size: 48px;
-  font-weight: 700;
-  font-style: italic;
-  text-shadow: 3px 6px rgba(0, 0, 0, 0.25);
 }
 </style>
