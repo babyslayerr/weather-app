@@ -3,9 +3,9 @@
        v-bind:class="typeof weather.main != 'undefined' && toC(weather.main.temp) > 16?'warm':''"
   > <!-- 스타일 적용을 위한 root태그 생성 동적으로 클래스를 지정-->
     <div class="search-box">
-      <input v-model="city" id="cityInput"/>
+      <input v-model="city" id="cityInput" placeholder="Enter the City ex) sacheon"/>
     </div>
-    <div v-if="weather.main"> <!-- 외부데이터 가져오기전 보이지 않는 영역(객체는 true를 반환하기 때문에 속성까지 접근-->
+    <div v-if="weather.main"> <!-- 외부데이터 가져오기전 보이지 않는 영역(객체는 true를 반환하기 때문에 속성까지 접근)-->
       <div class="location-box">
         <div> {{weather.name}}, {{weather.sys.country}}</div>
       </div>
@@ -45,10 +45,12 @@ export default {
         }
       }).then(response => {
         // 제공받은 데이터 콘솔 출력
-        console.log(response);
+        // console.log(response);
         // 제공받은 데이터 set처리
         weather.value = response.data;
-      }).catch(() =>{
+      }).catch((error) =>{
+        // 외부 api에서 제공한 Error메세지 출력
+        alert(error.response.data.message)
         // 에러발생시 weather 내용 초기화
         weather.value = {}
       })
